@@ -1,16 +1,16 @@
 # TODO:
 
 ## Core
-[ ] Player:
+- [ ] Player:
     - Scale up character
     - Flip sprite (mirror)
 
-[ ] Add game mechanics:
+- [ ] Add game mechanics:
     - attacking
     - puzzle
     - etc...
-[ ] Add keybindings config (could use dictionaries for this)
-[ ] Find ways to generate the level:
+- [ ] Add keybindings config (could use dictionaries for this)
+- [ ] Find ways to generate the level:
     - create using tile mapping
     - utilize .csv for saving these tiles
     - for example:
