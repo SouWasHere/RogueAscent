@@ -29,7 +29,7 @@
 
         const player = {
             x: 100,
-            y: canvas.height - 150,
+            y: 100,
             width: 80,
             height: 48,
             velocityY: 0,
@@ -90,13 +90,15 @@
             player.y += player.velocityY;
             player.grounded = false;
 
+            /* 
+                TODO:  find more efficient way of doing this 
+            */
             platforms.forEach(platform => {
-                if (
-                    player.y + player.height > platform.y &&
+                if (player.y + player.height > platform.y &&
                     player.y + player.height - player.velocityY <= platform.y &&
                     player.x + player.width > platform.x &&
-                    player.x < platform.x + platform.width
-                ) {
+                    player.x < platform.x + platform.width) 
+                {
                     player.y = platform.y - player.height;
                     player.velocityY = 0;
                     player.grounded = true;
