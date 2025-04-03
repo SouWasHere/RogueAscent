@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic JS Platformer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: lightblue;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const player = {
+            x: 100,
+            y: canvas.height - 150,
+            width: 80,
+            height: 48,
+            velocityY: 0,
+            gravity: 0.5,
+            jumpPower: -10,
+            grounded: false,
+            velocityX: 0,
+            frameIndex: 0,
+            frameSpeed: 4,
+            frameCounter: 0,
+            moving: false,
+            jumping: false,
+            state: "idle"
+        };
+
+        let cameraX = 0;
+        let keys = {};
+
+        const runSpriteSheet = new Image();
+        runSpriteSheet.src = "Run.png";
+        const idleSprite = new Image();
+        idleSprite.src = "Idle.png";
+
+        const frameWidth = 80;
+        const frameHeight = 48;
+        const totalFrames = 8;
+
+        let platforms = [
+            { x: 50, y: canvas.height - 50, width: 200, height: 10 },
+            { x: 300, y: canvas.height - 100, width: 200, height: 10 },
+            { x: 550, y: canvas.height - 150, width: 200, height: 10 },
+            { x: 800, y: canvas.height - 50, width: 200, height: 10 },
+            { x: 1100, y: canvas.height - 100, width: 200, height: 10 },
+            { x: 1400, y: canvas.height - 150, width: 200, height: 10 }
+        ];
+
+        window.addEventListener("keydown", (e) => keys[e.code] = true);
+        window.addEventListener("keyup", (e) => keys[e.code] = false);
+
+        function update() {
+            player.velocityX = 0;
+            player.moving = false;
+
+            if (keys["ArrowRight"]) {
+                player.velocityX = 5;
+                player.moving = true;
+            }
+            if (keys["ArrowLeft"]) {
+                player.velocityX = -5;
+                player.moving = true;
+            }
+
+            player.x += player.velocityX;
+            cameraX = player.x - canvas.width / 4;
+
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+            player.grounded = false;
+
+            platforms.forEach(platform => {
+                if (
+                    player.y + player.height > platform.y &&
+                    player.y + player.height - player.velocityY <= platform.y &&
+                    player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width
+                ) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.grounded = true;
+                    player.jumping = false;
+                }
+            });
+
+            if (keys["Space"] && player.grounded) {
+                player.velocityY = player.jumpPower;
+                player.grounded = false;
+                player.jumping = true;
+            }
+
+            player.state = player.moving ? "running" : "idle";
+
+            if (player.moving) {
+                player.frameCounter++;
+                if (player.frameCounter >= player.frameSpeed) {
+                    player.frameCounter = 0;
+                    player.frameIndex = (player.frameIndex + 1) % totalFrames;
+                }
+            } else {
+                player.frameIndex = 0;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (player.state === "running") {
+                ctx.drawImage(
+                    runSpriteSheet,
+                    player.frameIndex * frameWidth, 0,
+                    frameWidth, frameHeight,
+                    player.x - cameraX, player.y,
+                    frameWidth, frameHeight
+                );
+            } else {
+                ctx.drawImage(
+                    idleSprite,
+                    0, 0,
+                    frameWidth, frameHeight,
+                    player.x - cameraX, player.y,
+                    frameWidth, frameHeight
+                );
+            }
+
+            ctx.fillStyle = "brown";
+            platforms.forEach(platform => {
+                ctx.fillRect(platform.x - cameraX, platform.y, platform.width, platform.height);
+            });
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
