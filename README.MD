@@ -24,6 +24,7 @@
 ## Stage 1:
     - fighting 
     - less puzzles
+    - hehe
 
 ## Story 
     - hired mercenary
