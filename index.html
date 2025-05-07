@@ -89,13 +89,13 @@
 
         // Load the level and start the game
         window.onload = () => {
-            fetch("Level/test/Tutorial_ProjectCastle_Basement.json")
-                .then(res => res.json())
-                .then(json => {
-                    level = new Level(json);
-                    gameLoop();
-                });
-        };
+    fetch("Level/test/Tutorial_Project/Castle_Basement.json")
+        .then(res => res.json())
+        .then(json => {
+            level = new Level(json);
+            gameLoop();
+        });
+};
     </script>
 </body>
 </html>
