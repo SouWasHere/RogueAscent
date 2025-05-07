@@ -43,10 +43,10 @@ class Player {
         this.width = 80;
         this.height = 48;
         this.velocityY = 0;
+        this.velocityX = 0;
         this.gravity = 0.2;
         this.jumpPower = -10;
         this.grounded = false;
-        this.velocityX = 0;
         this.frameIndex = 0;
         this.frameSpeed = 4;
         this.frameCounter = 0;
