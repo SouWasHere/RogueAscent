@@ -114,13 +114,16 @@
 
         function update() {
             player.update();
-            
+
             // Check if player is pressing down to drop through platforms
             const droppingDown = keys["ArrowDown"] || keys["KeyS"];
             
             // Check for platform collisions
             player.grounded = false;
             platforms.forEach(platform => {
+
+                platform.x = platform.x + (player.velocityX * -1);
+                
                 // Only check for collision if player is not trying to drop down
                 // or if player is moving upward (to prevent getting stuck)
                 if (!droppingDown || player.velocityY < 0) {
