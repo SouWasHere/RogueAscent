@@ -1,219 +1,272 @@
-@ -2,111 +2,40 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RogueAscent</title>
-    <title>Platformer Game</title>
     <style>
-        body {
         html, body {
             margin: 0;
+            padding: 0;
             overflow: hidden;
-            background: lightblue;
             background: #000;
+            height: 100%;
+            font-family: 'Arial', sans-serif;
         }
+
         canvas {
             display: block;
             position: absolute;
             top: 0;
             left: 0;
-            background: #88c0d0;
+            background: #1a1a2e;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            pointer-events: all;
+        }
+
+        #levelSelect {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 3px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+        }
+
+        #levelInfo {
+            margin-top: 10px;
+            font-size: 14px;
+            max-width: 300px;
+        }
+
+        #healthBar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 200px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+            padding: 2px;
+            z-index: 10;
+        }
+
+        #healthFill {
+            height: 100%;
+            background: linear-gradient(to right, #ff0000, #ff9900);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        #healthText {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 14px;
+            line-height: 20px;
+            text-shadow: 1px 1px 1px black;
+        }
+
+        #transitionOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            opacity: 0;
+            z-index: 100;
+            display: none;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        #levelName {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <script src="src/GameObject.js"></script>
+    <div id="ui">
+        <select id="levelSelect">
+            <option value="Level/test/Tutorial_Project/arena_level.json">Arena</option>
+        </select>
+        <div id="levelInfo"></div>
+    </div>
 
-    <!-- Scripts -->
+    <div id="healthBar">
+        <div id="healthFill"></div>
+        <div id="healthText">Health: 3/3</div>
+    </div>
+
+    <div id="controls">
+        <div>←→: Move | Space: Jump | Z: Attack</div>
+        <div>X: Dash | C: Lunge | ↓: Phase Through</div>
+    </div>
+
     <script src="src/Player.js"></script>
     <script src="src/Level.js"></script>
-
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        const player = new Player();
-
-        let player = new Player();
-        let level = null;
-        let cameraX = 0;
-        let keys = {};
-
-        const frameWidth = 80;
-        const frameHeight = 48;
-        const totalFrames = 8;
-
-        // list of platforms
-        // { posX , posY, width height }
-        let platforms = [
-            // Original platforms
-            { x: 50, y: canvas.height - 50, width: 200, height: 10 },
-            { x: 300, y: canvas.height - 100, width: 200, height: 10 },
-            { x: 550, y: canvas.height - 150, width: 200, height: 10 },
-            { x: 800, y: canvas.height - 50, width: 200, height: 10 },
-            { x: 1100, y: canvas.height - 100, width: 200, height: 10 },
-            { x: 1400, y: canvas.height - 150, width: 200, height: 10 },
-
-            // Additional platforms
-            { x: 1700, y: canvas.height - 200, width: 200, height: 10 },
-            { x: 2000, y: canvas.height - 250, width: 200, height: 10 },
-            { x: 2300, y: canvas.height - 200, width: 200, height: 10 },
-            { x: 2600, y: canvas.height - 150, width: 200, height: 10 },
-
-            // Vertical challenge section
-            { x: 2900, y: canvas.height - 100, width: 200, height: 10 },
-            { x: 3100, y: canvas.height - 180, width: 100, height: 10 },
-            { x: 3250, y: canvas.height - 260, width: 100, height: 10 },
-            { x: 3400, y: canvas.height - 340, width: 100, height: 10 },
-            { x: 3550, y: canvas.height - 260, width: 100, height: 10 },
-            { x: 3700, y: canvas.height - 180, width: 100, height: 10 },
-            { x: 3850, y: canvas.height - 100, width: 200, height: 10 },
-
-            // Final section
-            { x: 4100, y: canvas.height - 150, width: 300, height: 10 },
-            { x: 4450, y: canvas.height - 200, width: 300, height: 10 },
-            { x: 4800, y: canvas.height - 250, width: 400, height: 10 },
-
-            // Stacked platforms section 1
-            { x: 1000, y: canvas.height - 200, width: 150, height: 10 },
-            { x: 1025, y: canvas.height - 250, width: 100, height: 10 },
-            { x: 1050, y: canvas.height - 300, width: 50, height: 10 },
-
-            // Stacked platforms section 2
-            { x: 1800, y: canvas.height - 250, width: 150, height: 10 },
-            { x: 1800, y: canvas.height - 300, width: 150, height: 10 },
-            { x: 1800, y: canvas.height - 350, width: 150, height: 10 },
-
-            // Stacked platforms section 3 - tower
-            { x: 2500, y: canvas.height - 200, width: 100, height: 10 },
-            { x: 2500, y: canvas.height - 250, width: 100, height: 10 },
-            { x: 2500, y: canvas.height - 300, width: 100, height: 10 },
-            { x: 2500, y: canvas.height - 350, width: 100, height: 10 },
-            { x: 2500, y: canvas.height - 400, width: 100, height: 10 },
-
-            // Stacked platforms section 4 - staircase
-            { x: 3000, y: canvas.height - 150, width: 80, height: 10 },
-            { x: 3050, y: canvas.height - 200, width: 80, height: 10 },
-            { x: 3100, y: canvas.height - 250, width: 80, height: 10 },
-            { x: 3150, y: canvas.height - 300, width: 80, height: 10 },
-            { x: 3200, y: canvas.height - 350, width: 80, height: 10 },
-            { x: 3250, y: canvas.height - 400, width: 80, height: 10 },
-
-            // Stacked platforms section 5 - floating islands
-            { x: 4000, y: canvas.height - 300, width: 120, height: 10 },
-            { x: 4000, y: canvas.height - 350, width: 80, height: 10 },
-            { x: 4000, y: canvas.height - 400, width: 40, height: 10 },
-
-            { x: 4200, y: canvas.height - 300, width: 120, height: 10 },
-            { x: 4220, y: canvas.height - 350, width: 80, height: 10 },
-            { x: 4240, y: canvas.height - 400, width: 40, height: 10 }
-        ];
-        const keys = {};
-
-        window.addEventListener("keydown", (e) => keys[e.code] = true);
-        window.addEventListener("keyup", (e) => keys[e.code] = false);
-
-        // Handle window resizing
-        window.addEventListener("keydown", e => keys[e.code] = true);
-        window.addEventListener("keyup", e => keys[e.code] = false);
-        window.addEventListener("resize", () => {
+        // Initialize the game when the page loads
+        window.addEventListener('load', async () => {
+            const canvas = document.createElement('canvas');
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-@ -115,48 +44,40 @@
-        function update() {
-            player.update();
-
-            // Check if player is pressing down to drop through platforms
-            const droppingDown = keys["ArrowDown"] || keys["KeyS"];
-
-            // Check for platform collisions
-            player.grounded = false;
-            platforms.forEach(platform => {
-            // Collision with level platforms
-            if (level) {
-                const platforms = level.platforms;
-                const dropDown = keys["ArrowDown"] || keys["KeyS"];
-
-                // platform.x = platform.x + (player.velocityX * -1);
-
-                // Only check for collision if player is not trying to drop down
-                // or if player is moving upward (to prevent getting stuck)
-                if (!droppingDown || player.velocityY < 0) {
-                    // Check if player is on top of platform
-                    if (player.x + player.width > platform.x - cameraX &&
-                        player.x < platform.x - cameraX + platform.width &&
-                        player.y + player.height > platform.y &&
-                        player.y + player.height < platform.y + platform.height / 2 &&
-                        player.velocityY >= 0) {
-
-                player.grounded = false;
-
-                for (const platform of platforms) {
-                    if (
-                        player.x + player.width > platform.x &&
-                        player.x < platform.x + platform.width &&
-                        player.y + player.height > platform.y &&
-                        player.y + player.height < platform.y + platform.height &&
-                        player.velocityY >= 0 &&
-                        !dropDown
-                    ) {
-                        player.y = platform.y - player.height;
-                        player.velocityY = 0;
+            document.body.appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            const levelSelect = document.getElementById('levelSelect');
+            
+            // Initialize camera and debug mode
+            window.cameraX = 0;
+            window.cameraY = 0;
+            window.DEBUG_MODE = false; // Set to true to see hitboxes
+            
+            // Keyboard state
+            const keys = {
+                "KeyZ": false,
+                "KeyX": false,
+                "KeyC": false,
+                "Space": false,
+                "ArrowUp": false,
+                "ArrowDown": false,
+                "ArrowLeft": false,
+                "ArrowRight": false,
+                "KeyW": false
+            };
+            window.addEventListener('keydown', (e) => {
+                keys[e.code] = true;
+                console.log('Key pressed:', e.code); // Debug log
+            });
+            window.addEventListener('keyup', (e) => {
+                keys[e.code] = false;
+                console.log('Key released:', e.code); // Debug log
+            });
+            
+            // Make canvas and keys globally accessible
+            window.gameCanvas = canvas;
+            window.keys = keys;
+            
+            // Function to load level data
+            async function loadLevelData(levelPath) {
+                try {
+                    console.log('Loading level from:', levelPath);
+                    const response = await fetch(levelPath);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const jsonData = await response.json();
+                    console.log('Level data loaded:', jsonData);
+                    // Pass canvas dimensions to Level constructor
+                    jsonData.canvasWidth = canvas.width;
+                    jsonData.canvasHeight = canvas.height;
+                    const level = new Level(jsonData);
+                    console.log('Level object created:', level);
+                    return level;
+                } catch (error) {
+                    console.error('Error loading level:', error);
+                    return null;
+                }
+            }
+            
+            // Load the first level by default
+            let level = await loadLevelData(levelSelect.value);
+            console.log('Initial level loaded:', level);
+            
+            // Create player
+            const player = new Player();
+            console.log('Player created:', player);
+            
+            // Handle level selection changes
+            levelSelect.addEventListener('change', async (e) => {
+                console.log('Level selection changed to:', e.target.value);
+                level = await loadLevelData(e.target.value);
+                // Reset player position when changing levels
+                player.resetPosition();
+            });
+            
+            // Start the game loop
+            function gameLoop() {
+                if (level) {
+                    // Clear the canvas
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Update player
+                    player.update();
+                    
+                    // Update camera to follow player
+                    const targetCameraX = player.x - canvas.width / 4;
+                    window.cameraX += (targetCameraX - window.cameraX) * 0.1; // Smooth camera movement
+                    
+                    // Check collisions with level
+                    if (level.checkPlatformCollision(player)) {
                         player.grounded = true;
-                        break;
+                        player.hasDoubleJumped = false;
+                    } else {
+                        player.grounded = false;
+                    }
+                    
+                    // Check hazard collisions
+                    const hazardDamage = level.checkHazardCollision(player);
+                    if (hazardDamage > 0 && !player.invincible) {
+                        // Handle player damage
+                        console.log('Player hit by hazard!');
+                    }
+                    
+                    // Draw the level
+                    try {
+                        level.draw(ctx, window.cameraX, 0);
+                        // Draw player
+                        player.draw(ctx);
+                    } catch (error) {
+                        console.error('Error drawing:', error);
+                        console.error('Error details:', {
+                            message: error.message,
+                            stack: error.stack,
+                            level: level,
+                            player: player
+                        });
                     }
                 }
-            });
+                requestAnimationFrame(gameLoop);
             }
-
-            cameraX = player.x - canvas.width / 4;
-        }
-
-        function draw() {
-            // Clear the entire canvas with each frame
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw background
-            ctx.fillStyle = "lightblue";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw platforms
-            ctx.fillStyle = "brown";
-            platforms.forEach(platform => {
-                ctx.fillRect(platform.x - cameraX, platform.y, platform.width, platform.height);
-            });
-
-            // Draw player
-
-            if (level) {
-                level.draw(ctx, cameraX, 0);
-            }
-
-            player.draw();
-        }
-
-@ -165,10 +86,15 @@
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Make sure all images are loaded before starting the game loop
-        window.onload = function() {
+            
             gameLoop();
-
-        // Load the level and start the game
-        window.onload = () => {
-            fetch("src/levels/Castle_Basement.json")
-                .then(res => res.json())
-                .then(json => {
-                    level = new Level(json);
-                    gameLoop();
-                });
-        };
+        });
     </script>
 </body>
+</html>
