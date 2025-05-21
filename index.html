@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>RogueAscent</title>
     <style>
+        @font-face {
+            font-family: 'PressStart2P';
+            src: url('https://fonts.gstatic.com/s/pressstart2p/v10/e3t4euO8T-267oIAQAu6jDQyKp43Ttdz.ttf') format('truetype');
+        }
+
         html, body {
             margin: 0;
             padding: 0;
             overflow: hidden;
             background: #000;
             height: 100%;
-            font-family: 'Arial', sans-serif;
+            font-family: 'PressStart2P', monospace;
         }
 
         canvas {
@@ -20,6 +25,53 @@
             top: 0;
             left: 0;
             background: #1a1a2e;
+	    image-rendering: pixelated;
+        }
+
+        #mainMenu, #exitScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            font-family: 'PressStart2P', monospace;
+            color: #fff;
+        }
+
+        #menuContainer, #exitMessage {
+            background: #222;
+            border: 4px solid #ffcc00;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 10px #ffcc00;
+        }
+
+        #menuContainer h1, #exitMessage h2 {
+            font-size: 20px;
+            color: #ffcc00;
+            margin-bottom: 20px;
+        }
+
+        #menuContainer button, #exitMessage button {
+            font-size: 14px;
+            font-family: 'PressStart2P', monospace;
+            padding: 12px 20px;
+            margin: 10px;
+            border: 2px solid #fff;
+            background: #000;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #menuContainer button:hover, #exitMessage button:hover {
+            background: #ffcc00;
+            color: #000;
+            border-color: #000;
         }
 
         #ui {
@@ -32,6 +84,7 @@
             padding: 10px;
             border-radius: 5px;
             pointer-events: all;
+            display: none;
         }
 
         #levelSelect {
@@ -59,6 +112,7 @@
             border-radius: 3px;
             padding: 2px;
             z-index: 10;
+            display: none;
         }
 
         #healthFill {
@@ -75,36 +129,9 @@
             width: 100%;
             text-align: center;
             color: white;
-            font-size: 14px;
+            font-size: 10px;
             line-height: 20px;
             text-shadow: 1px 1px 1px black;
-        }
-
-        #transitionOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            opacity: 0;
-            z-index: 100;
-            display: none;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-        }
-
-        #levelName {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 24px;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
         }
 
         #controls {
@@ -115,12 +142,89 @@
             background-color: rgba(0, 0, 0, 0.5);
             padding: 10px;
             border-radius: 5px;
-            font-size: 14px;
+            font-size: 10px;
             z-index: 10;
+            display: none;
         }
-    </style>
+    
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            font-family: 'PressStart2P', monospace;
+            color: #fff;
+        }
+
+        #gameOverMessage {
+            background: #222;
+            border: 4px solid red;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 10px red;
+        }
+
+        #gameOverMessage h2 {
+            font-size: 20px;
+            color: red;
+            margin-bottom: 20px;
+        }
+
+        #gameOverMessage button {
+            font-size: 14px;
+            font-family: 'PressStart2P', monospace;
+            padding: 12px 20px;
+            margin: 10px;
+            border: 2px solid #fff;
+            background: #000;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #gameOverMessage button:hover {
+            background: red;
+            color: #000;
+            border-color: #000;
+        }
+    
+</style>
 </head>
 <body>
+
+    <!-- Main Menu -->
+    <div id="mainMenu">
+        <div id="menuContainer">
+            <h1>RogueAscent</h1>
+            <button id="startGameBtn">▶ Start Game</button>
+            <button id="exitGameBtn">✖ Quit Game</button>
+            <p>Press Start to Begin</p>
+        </div>
+    </div>
+
+    
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" style="display: none;">
+        <div id="gameOverMessage">
+            <h2>💀 Game Over</h2>
+            <button id="restartGameOverBtn">🔁 Restart</button>
+        </div>
+    </div>
+    
+<!-- Exit Screen -->
+    <div id="exitScreen" style="display: none;">
+        <div id="exitMessage">
+            <h2>Thanks for playing!</h2>
+            <button id="restartBtn">🔁 Restart</button>
+        </div>
+    </div>
+
+    <!-- Game UI -->
     <div id="ui">
         <select id="levelSelect">
             <option value="Level/test/Tutorial_Project/arena_level.json">Arena</option>
@@ -138,135 +242,214 @@
         <div>X: Dash | C: Lunge | ↓: Phase Through</div>
     </div>
 
-    <script src="src/Player.js"></script>
-    <script src="src/Level.js"></script>
-    <script>
-        // Initialize the game when the page loads
-        window.addEventListener('load', async () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            document.body.appendChild(canvas);
-            
-            const ctx = canvas.getContext('2d');
-            const levelSelect = document.getElementById('levelSelect');
-            
-            // Initialize camera and debug mode
-            window.cameraX = 0;
-            window.cameraY = 0;
-            window.DEBUG_MODE = false; // Set to true to see hitboxes
-            
-            // Keyboard state
-            const keys = {
-                "KeyZ": false,
-                "KeyX": false,
-                "KeyC": false,
-                "Space": false,
-                "ArrowUp": false,
-                "ArrowDown": false,
-                "ArrowLeft": false,
-                "ArrowRight": false,
-                "KeyW": false
-            };
-            window.addEventListener('keydown', (e) => {
-                keys[e.code] = true;
-                console.log('Key pressed:', e.code); // Debug log
-            });
-            window.addEventListener('keyup', (e) => {
-                keys[e.code] = false;
-                console.log('Key released:', e.code); // Debug log
-            });
-            
-            // Make canvas and keys globally accessible
-            window.gameCanvas = canvas;
-            window.keys = keys;
-            
-            // Function to load level data
-            async function loadLevelData(levelPath) {
-                try {
-                    console.log('Loading level from:', levelPath);
-                    const response = await fetch(levelPath);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const jsonData = await response.json();
-                    console.log('Level data loaded:', jsonData);
-                    // Pass canvas dimensions to Level constructor
-                    jsonData.canvasWidth = canvas.width;
-                    jsonData.canvasHeight = canvas.height;
-                    const level = new Level(jsonData);
-                    console.log('Level object created:', level);
-                    return level;
-                } catch (error) {
-                    console.error('Error loading level:', error);
-                    return null;
-                }
+    <!-- Game Scripts -->
+    <script src="src/Player.js">
+    function gameOver() {
+        console.log("Game Over!");
+        document.getElementById('ui').style.display = 'none';
+        document.getElementById('healthBar').style.display = 'none';
+        document.getElementById('controls').style.display = 'none';
+        document.getElementById('gameOverScreen').style.display = 'flex';
+    }
+
+    document.getElementById('restartGameOverBtn').addEventListener('click', () => {
+        location.reload();
+    });
+    
+</script>
+<script src="src/Level.js">
+    function gameOver() {
+        console.log("Game Over!");
+        document.getElementById('ui').style.display = 'none';
+        document.getElementById('healthBar').style.display = 'none';
+        document.getElementById('controls').style.display = 'none';
+        document.getElementById('gameOverScreen').style.display = 'flex';
+    }
+
+    document.getElementById('restartGameOverBtn').addEventListener('click', () => {
+        location.reload();
+    });
+    
+</script>
+<script>
+    let gameStarted = false;
+
+    document.getElementById('startGameBtn').addEventListener('click', () => {
+        document.getElementById('mainMenu').style.display = 'none';
+        document.getElementById('ui').style.display = 'block';
+        document.getElementById('healthBar').style.display = 'block';
+        document.getElementById('controls').style.display = 'block';
+        if (!gameStarted) {
+            gameStarted = true;
+            startGame();
+        }
+    });
+
+    document.getElementById('exitGameBtn').addEventListener('click', () => {
+        document.getElementById('mainMenu').style.display = 'none';
+        document.getElementById('exitScreen').style.display = 'flex';
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', () => {
+        location.reload();
+    });
+
+    function startGame() {
+        const canvas = document.createElement('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        document.body.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+
+        window.cameraX = 0;
+        window.cameraY = 0;
+        window.DEBUG_MODE = false;
+
+        const keys = {
+            "KeyZ": false,
+            "KeyX": false,
+            "KeyC": false,
+            "Space": false,
+            "ArrowUp": false,
+            "ArrowDown": false,
+            "ArrowLeft": false,
+            "ArrowRight": false,
+            "KeyW": false
+        };
+        window.addEventListener('keydown', (e) => keys[e.code] = true);
+        window.addEventListener('keyup', (e) => keys[e.code] = false);
+
+        window.gameCanvas = canvas;
+        window.keys = keys;
+
+        async function loadLevelData(levelPath) {
+            try {
+                const response = await fetch(levelPath);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const jsonData = await response.json();
+                jsonData.canvasWidth = canvas.width;
+                jsonData.canvasHeight = canvas.height;
+                return new Level(jsonData);
+            } catch (error) {
+                console.error('Error loading level:', error);
+                return null;
             }
-            
-            // Load the first level by default
-            let level = await loadLevelData(levelSelect.value);
-            console.log('Initial level loaded:', level);
-            
-            // Create player
-            const player = new Player();
-            console.log('Player created:', player);
-            
-            // Handle level selection changes
-            levelSelect.addEventListener('change', async (e) => {
-                console.log('Level selection changed to:', e.target.value);
-                level = await loadLevelData(e.target.value);
-                // Reset player position when changing levels
-                player.resetPosition();
-            });
-            
-            // Start the game loop
-            function gameLoop() {
-                if (level) {
-                    // Clear the canvas
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Update player
-                    player.update();
-                    
-                    // Update camera to follow player
-                    const targetCameraX = player.x - canvas.width / 4;
-                    window.cameraX += (targetCameraX - window.cameraX) * 0.1; // Smooth camera movement
-                    
-                    // Check collisions with level
-                    if (level.checkPlatformCollision(player)) {
-                        player.grounded = true;
-                        player.hasDoubleJumped = false;
-                    } else {
-                        player.grounded = false;
-                    }
-                    
-                    // Check hazard collisions
-                    const hazardDamage = level.checkHazardCollision(player);
-                    if (hazardDamage > 0 && !player.invincible) {
-                        // Handle player damage
-                        console.log('Player hit by hazard!');
-                    }
-                    
-                    // Draw the level
-                    try {
-                        level.draw(ctx, window.cameraX, 0);
-                        // Draw player
-                        player.draw(ctx);
-                    } catch (error) {
-                        console.error('Error drawing:', error);
-                        console.error('Error details:', {
-                            message: error.message,
-                            stack: error.stack,
-                            level: level,
-                            player: player
-                        });
-                    }
-                }
-                requestAnimationFrame(gameLoop);
-            }
-            
-            gameLoop();
+        }
+
+        let level = null;
+        let player = new Player();
+
+        loadLevelData(document.getElementById('levelSelect').value).then(lvl => {
+            level = lvl;
+            console.log('Initial level loaded');
         });
-    </script>
+
+        document.getElementById('levelSelect').addEventListener('change', async (e) => {
+            level = await loadLevelData(e.target.value);
+            player.resetPosition();
+        });
+
+        function gameLoop() {
+	
+            if (level) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Update player
+                player.update();
+		// Update health bar UI
+const healthRatio = player.health / player.maxHealth;
+document.getElementById('healthFill').style.width = `${healthRatio * 100}%`;
+document.getElementById('healthText').textContent = `Health: ${player.health}/${player.maxHealth}`;
+
+
+                // Camera follow
+                const targetCameraX = player.x - canvas.width / 4;
+                window.cameraX += (targetCameraX - window.cameraX) * 0.1;
+
+                // Platform & hazard check
+                if (level.checkPlatformCollision(player)) {
+                    player.grounded = true;
+                    player.hasDoubleJumped = false;
+                } else {
+                    player.grounded = false;
+                }
+
+                const hazardDamage = level.checkHazardCollision(player);
+                if (hazardDamage > 0 && !player.invincible) {
+                    
+    const died = player.takeDamage(hazardDamage);
+    if (died) {
+        cancelAnimationFrame(animationId);
+        gameOver();
+        return;
+    }
+}
+	
+
+                // Boss AI
+                const boss = level.boss;
+                if (boss && (boss.active || boss.defeated)) {
+                    if (boss.active) {
+                        const dx = player.x - boss.x;
+                        const dy = player.y - boss.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist > 10) {
+                            boss.x += dx / dist * 1;
+                            boss.y += dy / dist * 0.5;
+                        }
+
+                        if (
+                            player.x + player.width > boss.x - boss.radius &&
+                            player.x < boss.x + boss.radius &&
+                            player.y + player.height > boss.y - boss.radius &&
+                            player.y < boss.y + boss.radius
+                        ) {
+                            player.takeDamage(boss.damage);
+                        }
+
+                        if (player.isAttacking && dist < 100) {
+                            boss.health -= 1;
+                            if (boss.health <= 0) {
+                                boss.active = false;
+                                boss.defeated = true;
+                                console.log("Solarion defeated!");
+                            }
+                        }
+                    }
+                }
+
+                // Draw
+                try {
+                    level.draw(ctx, window.cameraX, 0);
+                    level.drawSunBoss(ctx, window.cameraX, 0);
+                    player.draw(ctx);
+                } catch (error) {
+                    console.error('Drawing error:', error);
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    }
+
+    function gameOver() {
+        console.log("Game Over!");
+        document.getElementById('ui').style.display = 'none';
+        document.getElementById('healthBar').style.display = 'none';
+        document.getElementById('controls').style.display = 'none';
+        document.getElementById('gameOverScreen').style.display = 'flex';
+    }
+
+    document.getElementById('restartGameOverBtn').addEventListener('click', () => {
+        location.reload();
+    });
+    
+</script>
+
 </body>
 </html>

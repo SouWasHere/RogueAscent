@@ -108,8 +108,8 @@ class Player {
         this.airComboCooldown = 0;
 
         // Health
-        this.maxHealth = 3;
-        this.health = this.maxHealth;
+        this.maxHealth = 10;
+this.health = this.maxHealth;
         this.invincible = false;
         this.invincibleTimer = 0;
         this.invincibleDuration = 60;
@@ -236,40 +236,27 @@ Player.prototype.lunge = function() {
 };
 
 Player.prototype.attack = function() {
-    // Don't allow new attacks if current attack isn't finished
-    if (this.isAttacking) return;
+    if (this.isAttacking) return; // Prevent new attack before the current one finishes
 
-    // Start new attack
     this.isAttacking = true;
     this.attackFrameIndex = 0;
     this.attackFrameTimer = 0;
 
-    // Ground attacks
     if (this.grounded) {
         if (this.groundComboTimer > 0) {
             this.groundComboCount++;
-            if (this.groundComboCount === 1) {
-                this.state = "ground_combo_2";
-            } else if (this.groundComboCount === 2) {
-                this.state = "ground_combo_3";
-                this.groundComboCount = 0;
-            }
+            this.state = this.groundComboCount === 1 ? "ground_combo_2" : "ground_combo_3";
+            if (this.groundComboCount >= 2) this.groundComboCount = 0; // Reset after final combo
         } else {
             this.state = "ground_combo_1";
             this.groundComboCount = 0;
         }
-        this.groundComboTimer = 30; // Combo window
-    } 
-    // Air attacks
-    else {
+        this.groundComboTimer = 30; // Combo timing window
+    } else {
         if (this.airComboTimer > 0) {
             this.airComboCount++;
-            if (this.airComboCount === 1) {
-                this.state = "air_combo_2";
-            } else if (this.airComboCount === 2) {
-                this.state = "air_combo_3";
-                this.airComboCount = 0;
-            }
+            this.state = this.airComboCount === 1 ? "air_combo_2" : "air_combo_3";
+            if (this.airComboCount >= 2) this.airComboCount = 0;
         } else {
             this.state = "air_combo_1";
             this.airComboCount = 0;
@@ -277,11 +264,30 @@ Player.prototype.attack = function() {
         this.airComboTimer = 20;
     }
 
-    // Reset animation
     this.frameIndex = 0;
     this.frameCounter = 0;
 };
 
+Player.prototype.updateAnimation = function(deltaTime) {
+    const animData = Player.animations[this.state];
+    if (!animData) return;
+
+    this.frameCounter += deltaTime;
+    if (this.frameCounter >= animData.frameDelay) {
+        this.frameCounter = 0;
+        this.frameIndex++;
+
+        if (this.isAttacking && this.frameIndex >= animData.fCount - 1) {
+            this.isAttacking = false;
+            this.frameIndex = 0;
+            this.state = this.grounded ? "idle" : (this.velocityY < 0 ? "jump" : "fall");
+        }
+
+        if (this.frameIndex >= animData.fCount) {
+            this.frameIndex = 0; // Loop back if needed
+        }
+    }
+};
 Player.prototype.applyPhysics = function(deltaTime) {
     if (!this.dashing) {
         this.velocityY += this.gravity * deltaTime;
@@ -354,23 +360,25 @@ Player.prototype.updateCooldowns = function(deltaTime) {
 
 Player.prototype.draw = function(ctx) {
     const animData = Player.animations[this.state];
-    if (!animData) {
-        console.warn(`No animation data for state: ${this.state}`);
-        return;
-    }
-
-    // Check if image is loaded and valid
-    if (!animData.frames || !animData.frames.complete || animData.frames.naturalWidth === 0) {
-        console.warn(`Animation frame not ready for state: ${this.state}`);
-        return;
-    }
-
-    const frameIndex = Math.min(this.frameIndex, animData.fCount - 1);
-    const srcX = frameIndex * this.width;
     const drawX = Math.floor(this.x - cameraX);
     const drawY = Math.floor(this.y - cameraY);
 
+    // Check if image is loaded and valid
+    const imageReady = animData?.frames?.complete && animData.frames.naturalWidth > 0;
+
     try {
+        if (!imageReady) {
+            console.warn(`Animation frame not ready for state: ${this.state} — drawing fallback box.`);
+            ctx.fillStyle = "red";
+            ctx.fillRect(drawX, drawY, this.width, this.height);
+            ctx.strokeStyle = "white";
+            ctx.strokeRect(drawX, drawY, this.width, this.height);
+            return;
+        }
+
+        const frameIndex = Math.min(this.frameIndex, animData.fCount - 1);
+        const srcX = frameIndex * this.width;
+
         if (this.invincible) {
             ctx.globalAlpha = Math.sin(Date.now() / 50) * 0.5 + 0.5;
         }
@@ -400,9 +408,9 @@ Player.prototype.draw = function(ctx) {
             ctx.lineWidth = 1;
             ctx.strokeRect(drawX, drawY, this.width, this.height);
         }
+
     } catch (error) {
         console.error('Error drawing player:', error);
-        // Draw a fallback rectangle
         ctx.fillStyle = 'red';
         ctx.fillRect(drawX, drawY, this.width, this.height);
     }
@@ -412,12 +420,13 @@ Player.prototype.takeDamage = function(amount = 1) {
     if (this.invincible) return false;
 
     this.health -= amount;
+    if (this.health < 0) this.health = 0;
+
     this.invincible = true;
     this.invincibleTimer = this.invincibleDuration;
     this.state = "hurt";
     this.frameIndex = 0;
 
-    // Knockback effect
     this.velocityX = this.facingLeft ? 5 : -5;
     this.velocityY = -5;
 

@@ -10,6 +10,8 @@ class Level {
         this.spriteSheets = jsonData.spriteSheets || {};
         this.canvasWidth = jsonData.canvasWidth || 800;
         this.canvasHeight = jsonData.canvasHeight || 600;
+	this.collectibles = jsonData.collectibles || [];
+
 
         // Level elements
         this.platforms = [];
@@ -29,6 +31,21 @@ class Level {
             }
         ];
         this.collectibles = jsonData.collectibles || [];
+	// Boss setup
+this.boss = {
+   x: 500,
+    y: 100,
+    radius: 60,
+    health: 100,
+    maxHealth: 100,
+    damage: 2,
+    active: true,
+    defeated: false,
+    nameShown: true,
+    nameTimer: 180,
+    fadeAlpha: 0
+};
+
 
         // Background
         this.backgroundImage = null;
@@ -62,8 +79,8 @@ class Level {
 
         const possiblePaths = [
             `Level/test/Tutorial_Project/${levelId}.webp`,
-            `Level/test/Tutorial_Project/${levelId}.png`,
-            `Level/test/Tutorial_Project/${levelName}.webp`,
+            `Level/test/Tutorial_Project/${levelId}.webp`,
+            `Level/test/Tutorial_Project/${levelName}.jpeg`,
             `Level/test/Tutorial_Project/${levelName}.png`,
             `Level/test/Tutorial_Project/map.webp`,
             `Level/test/Tutorial_Project/map.png`
@@ -183,8 +200,9 @@ class Level {
 
         // Draw level elements
         this.drawPlatforms(ctx, cameraX, cameraY);
-        this.drawHazards(ctx, cameraX, cameraY);
+        
         this.drawCheckpoints(ctx, cameraX, cameraY);
+	this.drawHazards(ctx, cameraX, cameraY);
         this.drawExit(ctx, cameraX, cameraY);
         this.drawEnemies(ctx, cameraX, cameraY);
     }
@@ -200,17 +218,14 @@ class Level {
                 const bgX = -cameraX * this.parallaxFactor % this.backgroundImage.width;
                 const bgY = -cameraY * (this.parallaxFactor * 0.3);
 
-                // Draw tiled background
-                for (let x = bgX; x < this.canvasWidth; x += this.backgroundImage.width) {
-                    for (let y = bgY; y < this.canvasHeight; y += this.backgroundImage.height) {
-                        ctx.drawImage(
-                            this.backgroundImage,
-                            x, y,
-                            this.backgroundImage.width,
-                            this.backgroundImage.height
-                        );
-                    }
-                }
+               // Stretch background to fill canvas
+ctx.drawImage(
+    this.backgroundImage,
+    0, 0,
+    this.canvasWidth,
+    this.canvasHeight
+);
+
             } catch (e) {
                 console.error("Error drawing background:", e);
             }
@@ -218,48 +233,50 @@ class Level {
     }
 
     drawPlatforms(ctx, cameraX, cameraY) {
-        console.log('Drawing platforms. Count:', this.platforms.length, 'Camera:', { x: cameraX, y: cameraY });
-        for (const platform of this.platforms) {
-            const x = Math.floor(platform.x - cameraX);
-            const y = Math.floor(platform.y - cameraY);
+    console.log('Drawing cloud platforms. Count:', this.platforms.length, 'Camera:', { x: cameraX, y: cameraY });
+    for (const platform of this.platforms) {
+        const x = Math.floor(platform.x - cameraX);
+        const y = Math.floor(platform.y - cameraY);
+        const width = platform.width;
+        const height = platform.height;
 
-            // Platform style
-            const gradient = ctx.createLinearGradient(x, y, x, y + platform.height);
-            gradient.addColorStop(0, "rgba(100, 100, 100, 0.9)");
-            gradient.addColorStop(1, "rgba(80, 80, 80, 0.9)");
-            ctx.fillStyle = gradient;
-            ctx.fillRect(x, y, platform.width, platform.height);
 
-            // Platform border
-            ctx.strokeStyle = "rgba(40, 40, 40, 0.5)";
-            ctx.lineWidth = 1;
-            ctx.strokeRect(x, y, platform.width, platform.height);
+        // Cloud style
+        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+        ctx.strokeStyle = "rgba(200, 200, 255, 0.6)";
+        ctx.lineWidth = 2;
+
+        // Draw puffy cloud shape using multiple arcs
+        ctx.beginPath();
+        const puffCount = Math.max(2, Math.floor(width / 40));
+        const puffRadius = height * 0.8;
+        const step = width / puffCount;
+
+        for (let i = 0; i < puffCount; i++) {
+            const cx = x + i * step + step / 2;
+            const cy = y + height / 2;
+            ctx.moveTo(cx + puffRadius, cy);
+            ctx.arc(cx, cy, puffRadius, 0, Math.PI * 2);
         }
-    }
 
-    drawHazards(ctx, cameraX, cameraY) {
-        for (const hazard of this.hazards) {
-            const x = Math.floor(hazard.x - cameraX);
-            const y = Math.floor(hazard.y - cameraY);
-
-            // Draw spike
-            ctx.fillStyle = "rgba(200, 50, 50, 0.9)";
-            ctx.beginPath();
-            ctx.moveTo(x, y + hazard.height);
-            ctx.lineTo(x + hazard.width/2, y);
-            ctx.lineTo(x + hazard.width, y + hazard.height);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Add glow effect
-            ctx.shadowColor = "rgba(255, 0, 0, 0.3)";
-            ctx.shadowBlur = 3;
-            ctx.strokeStyle = "rgba(255, 0, 0, 0.6)";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
     }
+}
+drawHazards(ctx, cameraX, cameraY) {
+    for (const hazard of this.hazards) {
+        const x = Math.floor(hazard.x - cameraX);
+        const y = Math.floor(hazard.y - cameraY);
+
+        ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 1;
+
+        ctx.fillRect(x, y, hazard.width, hazard.height);
+        ctx.strokeRect(x, y, hazard.width, hazard.height);
+    }
+}
 
     drawCheckpoints(ctx, cameraX, cameraY) {
         for (const checkpoint of this.checkpoints) {
@@ -331,6 +348,89 @@ class Level {
             ctx.fillText(enemy.animationState, x, y + enemy.height + 15);
         }
     }
+drawBoss(ctx, cameraX, cameraY) {
+    if (!this.boss?.active) return;
+
+    const x = Math.floor(this.boss.x - cameraX);
+    const y = Math.floor(this.boss.y - cameraY);
+
+    // Draw boss
+    ctx.fillStyle = this.boss.color;
+    ctx.fillRect(x, y, this.boss.width, this.boss.height);
+
+    // Draw boss health bar
+    const barWidth = 200;
+    const barX = (this.canvasWidth - barWidth) / 2;
+    const barY = 30;
+    const hpRatio = this.boss.health / this.boss.maxHealth;
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(barX - 2, barY - 2, barWidth + 4, 24);
+
+    ctx.fillStyle = "red";
+    ctx.fillRect(barX, barY, barWidth * hpRatio, 20);
+
+    ctx.strokeStyle = "white";
+    ctx.strokeRect(barX, barY, barWidth, 20);
+}
+drawSunBoss(ctx, cameraX, cameraY) {
+    const boss = this.boss;
+    if (!boss?.active && !boss.defeated) return;
+
+    const x = Math.floor(boss.x - cameraX);
+    const y = Math.floor(boss.y - cameraY);
+
+    // Draw radiant sun
+    const gradient = ctx.createRadialGradient(x, y, 10, x, y, boss.radius);
+    gradient.addColorStop(0, "yellow");
+    gradient.addColorStop(1, "orange");
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(x, y, boss.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Boss name display
+    if (boss.nameShown && boss.nameTimer > 0) {
+        const alpha = Math.min(1, boss.nameTimer / 60);
+        ctx.globalAlpha = alpha;
+
+        ctx.fillStyle = "#ffcc00";
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("☀️ Solarion, The Burning Wrath", this.canvasWidth / 2, 80);
+
+        ctx.globalAlpha = 1.0;
+        boss.nameTimer--;
+        if (boss.nameTimer <= 0) boss.nameShown = false;
+    }
+
+    // Boss health bar
+    if (!boss.defeated) {
+        const barWidth = 300;
+        const barX = (this.canvasWidth - barWidth) / 2;
+        const barY = 30;
+        const hpRatio = boss.health / boss.maxHealth;
+
+        ctx.fillStyle = "black";
+        ctx.fillRect(barX - 2, barY - 2, barWidth + 4, 24);
+
+        ctx.fillStyle = "red";
+        ctx.fillRect(barX, barY, barWidth * hpRatio, 20);
+
+        ctx.strokeStyle = "white";
+        ctx.strokeRect(barX, barY, barWidth, 20);
+    }
+
+    // Win animation (sun shrink and fade)
+    if (boss.defeated) {
+        if (boss.radius > 0) boss.radius -= 0.5;
+        if (boss.fadeAlpha < 1) boss.fadeAlpha += 0.01;
+
+        ctx.fillStyle = `rgba(255,255,255,${boss.fadeAlpha})`;
+        ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+    }
+}
 
     checkPlatformCollision(player) {
         let isGrounded = false;
