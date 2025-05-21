@@ -186,7 +186,7 @@ this.boss = {
                 y: tile.y * this.tileSize,
                 width: this.tileSize,
                 height: this.tileSize,
-                damage: 10, // Increased damage
+                damage: 1, // Increased damage
                 type: "spike"
             };
             this.hazards.push(hazard);
